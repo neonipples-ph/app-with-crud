@@ -63,8 +63,9 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
 
   return (
     <View style={styles.container}>
+      <Text className='text-xl font-bold text-center mb-5' style={{ fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }}
+      >EEDIT USER INFO</Text>
       <Card style={styles.card}>
-        <Card.Title title="Edit User" />
         <Card.Content>
           <TextInput
             label="Full Name"
@@ -107,7 +108,7 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
     backgroundColor: '#f8f9fa',
     justifyContent: 'center',
   },
@@ -124,6 +125,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 10,
+    backgroundColor: 'darkgreen',
   },
 });
 

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Alert, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
-import { Button } from 'react-native-paper';
+import { Button, TextInput } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type LoginScreenProps = StackScreenProps<RootStackParamList, 'Login'>;
@@ -13,7 +13,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false); // State for modal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Toggle password visibility
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,7 +34,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       const data = await response.json();
 
       if (response.ok) {
-        await AsyncStorage.setItem('user', JSON.stringify(data.user)); // Store user info
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
         navigation.replace('Dashboard');
       } else {
         Alert.alert('Error', data.message || 'Invalid credentials');
@@ -50,19 +51,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     <View style={styles.container}>
       <Text style={styles.title}>miss ko na siya</Text>
 
+      {/* Email Input with Icon */}
       <TextInput
-        style={styles.input}
-        placeholder="Email"
+        mode="outlined"
+        label="Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
-      />
-      <TextInput
+        left={<TextInput.Icon icon="email" />}
         style={styles.input}
-        placeholder="Password"
+      />
+
+      {/* Password Input with Eye Icon */}
+      <TextInput
+        mode="outlined"
+        label="Password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
+        secureTextEntry={!showPassword}
+        left={<TextInput.Icon icon="lock" />}
+        right={
+          <TextInput.Icon
+            icon={showPassword ? "eye-off" : "eye"}
+            onPress={() => setShowPassword(!showPassword)}
+          />
+        }
+        style={styles.input}
       />
 
       <Button
@@ -84,7 +98,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         Register
       </Button>
 
-      {/* Terms & Conditions Button */}
+      {/* Terms & Conditions */}
       <TouchableOpacity onPress={() => setModalVisible(true)}>
         <Text style={styles.termsButton}>Terms & Conditions</Text>
       </TouchableOpacity>
@@ -144,13 +158,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingHorizontal: 15,
     marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
   button: {
     width: '100%',
