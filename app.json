@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "crudappko",
-    "slug": "crudappko",
+    "slug": "expo-api-ready",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,13 +9,18 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.neonipplesph.expoapiready",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.neonipplesph.expoapiready"
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +41,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2c2f2644-b1e5-4bd7-9e02-7ecf0dbd3481"
+      }
+    },
+    "owner": "neonipples-ph"
   }
 }
