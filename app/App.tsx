@@ -24,12 +24,37 @@ export default function App() {
     <NavigationIndependentTree>
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        <Stack.Screen name="EditUser" component={EditUserScreen} />
+      <Stack.Screen 
+  name="Login" 
+  component={LoginScreen} 
+  options={{ headerShown: false }} 
+/>
+
+<Stack.Screen 
+  name="Register" 
+  component={RegisterScreen} 
+  options={{ headerShown: false }} 
+/>
+
+        <Stack.Screen 
+  name="Dashboard" 
+  component={DashboardScreen} 
+  options={{ headerShown: false }} 
+/>
+
+<Stack.Screen 
+  name="EditUser" 
+  component={EditUserScreen} 
+  options={{ headerShown: false }} 
+/>
+
         <Stack.Screen name="DeleteUser" component={DeleteUserScreen} />
-        <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+        <Stack.Screen 
+  name="UserProfile" 
+  component={UserProfileScreen} 
+  options={{ headerShown: false }} 
+/>
+
       </Stack.Navigator>
     </NavigationContainer>
     </NavigationIndependentTree>

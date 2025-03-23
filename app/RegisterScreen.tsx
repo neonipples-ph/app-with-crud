@@ -20,18 +20,21 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       Alert.alert('Error', 'All fields are required.');
       return;
     }
-
+  
     setLoading(true);
-
+    
+    // Get the current date & format it
+    const createdAt = new Date().toISOString(); // Example: "2025-03-23T12:34:56.789Z"
+  
     try {
       const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, username, email, password }),
+        body: JSON.stringify({ fullName, username, email, password, createdAt }), // Include "Joined At"
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         Alert.alert('Success', 'User registered successfully');
         navigation.replace('Login');
@@ -45,6 +48,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       setLoading(false);
     }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -114,7 +118,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    backgroundColor: '#4CAF50', // Green theme
+    backgroundColor: 'green', // Green theme
     borderRadius: 10,
     paddingVertical: 8,
   },

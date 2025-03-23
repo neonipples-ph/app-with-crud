@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Alert, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
 import { Button } from 'react-native-paper';
@@ -13,25 +13,25 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
- 
+  const [modalVisible, setModalVisible] = useState(false); // State for modal
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Email and password are required.');
       return;
     }
-  
+
     setLoading(true);
-  
+
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
         await AsyncStorage.setItem('user', JSON.stringify(data.user)); // Store user info
         navigation.replace('Dashboard');
@@ -48,7 +48,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
+      <Text style={styles.title}>miss ko na siya</Text>
 
       <TextInput
         style={styles.input}
@@ -83,10 +83,51 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       >
         Register
       </Button>
+
+      {/* Terms & Conditions Button */}
+      <TouchableOpacity onPress={() => setModalVisible(true)}>
+        <Text style={styles.termsButton}>Terms & Conditions</Text>
+      </TouchableOpacity>
+
+      {/* Modal for Terms & Conditions */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ScrollView>
+              <Text style={styles.modalTitle}>📜 Funny Terms & Conditions</Text>
+              <Text style={styles.modalText}>
+                1. By using this app, you agree to bring me snacks. 🍕
+              </Text>
+              <Text style={styles.modalText}>
+                2. If the app crashes, just pretend it’s a feature. 🤡
+              </Text>
+              <Text style={styles.modalText}>
+                3. If you forget your password, try "123456" or "password" (just kidding, don't). 🔐
+              </Text>
+              <Text style={styles.modalText}>
+                4. We do not collect your data… but if we did, we would sell it for tacos. 🌮
+              </Text>
+              <Text style={styles.modalText}>
+                5. If you disagree with these terms, please close your eyes and keep using the app. 👀
+              </Text>
+            </ScrollView>
+
+            <Button mode="contained" onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              Close
+            </Button>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -132,6 +173,39 @@ const styles = StyleSheet.create({
   outlineButtonText: {
     fontSize: 16,
     color: '#2E7D32',
+  },
+  termsButton: {
+    marginTop: 20,
+    fontSize: 14,
+    color: 'gray',
+    textDecorationLine: 'underline',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  closeButton: {
+    marginTop: 15,
   },
 });
 
