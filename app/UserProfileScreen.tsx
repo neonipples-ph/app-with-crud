@@ -12,7 +12,6 @@ interface User {
   email: string;
   username: string;
   avatar?: string | any;
-
 }
 
 const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
@@ -21,15 +20,16 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
   useEffect(() => {
     getCurrentUser();
   }, []);
-    useEffect(() => {
-      if (currentUser) {
-        navigation.setOptions({
-          headerTitle: '',
-          headerStyle: styles.header,
-          headerRight: () => null,
-        });
-      }
-    }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      navigation.setOptions({
+        headerTitle: '',
+        headerStyle: styles.header,
+        headerRight: () => null,
+      });
+    }
+  }, [currentUser]);
 
   // Hide the back button when this screen is displayed
   useLayoutEffect(() => {
@@ -55,12 +55,12 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Status Bar */}
-      <StatusBar backgroundColor="#4CAF50" barStyle="light-content" />
+      <StatusBar barStyle="light-content" />
 
-      {/* Curved Header
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Welcome, {currentUser?.fullName || 'Guest'}!</Text>
-      </View> */}
+      {/* Welcome Message */}
+      <Text style={[styles.welcomeMessage, { color: 'green' }]}>
+  hello, {currentUser?.username || 'Guest'}!
+</Text>
 
       {/* User Profile Card */}
       <Card style={styles.card}>
@@ -88,24 +88,17 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
+    justifyContent: 'center', // Center everything vertically
+  },
+  welcomeMessage: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  headerStyle:{
+    backgroundColor: '#4CAF50',
   },
   header: {
-    backgroundColor: '#4CAF50',
-    width: '100%',
-    height: 100,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  avatarIcon: {
-    marginRight: 15,
-  },
-  headerText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
   },
   card: {
     width: '100%',
@@ -118,6 +111,7 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: 'center',
+    justifyContent: 'center', // Center content inside the card
   },
   fullName: {
     fontSize: 22,
@@ -136,8 +130,9 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 20,
-    width: '100%',
+    width: '90%',
     backgroundColor: 'red',
+    alignSelf: 'center', // Center button properly
   },
 });
 

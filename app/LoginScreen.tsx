@@ -4,6 +4,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
 import { Button, TextInput } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
 
 type LoginScreenProps = StackScreenProps<RootStackParamList, 'Login'>;
 
@@ -49,7 +50,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>miss ko na siya</Text>
+      <Text style={[styles.title , { color: 'green' } ] }>welcome back</Text>
 
       {/* Email Input with Icon */}
       <TextInput
@@ -113,7 +114,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <ScrollView>
-              <Text style={styles.modalTitle}>📜 Funny Terms & Conditions</Text>
+              <Text style={styles.modalTitle}>📜 Terms & Conditions</Text>
               <Text style={styles.modalText}>
                 1. By using this app, you agree to bring me snacks. 🍕
               </Text>
