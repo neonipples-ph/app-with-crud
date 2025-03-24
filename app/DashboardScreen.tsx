@@ -14,11 +14,16 @@ interface User {
   fullName: string;
   email: string;
   username: string;
-  createdAt?: string;
+  dateOfBirth?: string; // Changed from birthdate to dateOfBirth (to match API)
+  age?: number | null; // ✅ Added age
+  gender?: string;
+  course?: string;
+  joinedAt?: string; // ✅ Added joinedAt (from API)
   avatar?: string | any;
 }
 
-const API_URL = 'https://apikonatalagato.vercel.app/api';
+
+const API_URL = 'https://apinijno.vercel.app/api';
 
 const avatars = [
   require('../assets/images/avatar1.png'),
@@ -47,23 +52,39 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     try {
       const response = await fetch(`${API_URL}/users`);
       let data: User[] = await response.json();
-
+  
       let usedIndexes: number[] = [];
       data = data.map(user => {
+        // 🔹 Assign a random avatar
         let randomIndex;
         do {
           randomIndex = Math.floor(Math.random() * avatars.length);
         } while (usedIndexes.includes(randomIndex) && usedIndexes.length < avatars.length);
-
+  
         usedIndexes.push(randomIndex);
         if (usedIndexes.length >= avatars.length) usedIndexes = [];
-
+  
+        // ✅ Calculate age from dateOfBirth
+        let age = null;
+        if (user.dateOfBirth) {
+          const birthDate = new Date(user.dateOfBirth);
+          const today = new Date();
+          age = today.getFullYear() - birthDate.getFullYear();
+  
+          // Adjust if the birthday hasn't occurred yet this year
+          const birthdayThisYear = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+          if (today < birthdayThisYear) {
+            age -= 1;
+          }
+        }
+  
         return {
           ...user,
           avatar: user.avatar || avatars[randomIndex],
+          age, // ✅ Attach calculated age
         };
       });
-
+  
       setUsers(data);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -136,32 +157,59 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
               renderRightActions={() => (
                 <TouchableOpacity
                   onPress={() => handleDeleteUser(item._id)}
-                  style={{
-                    backgroundColor: 'red',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: 80,
-                    height: '100%',
-                    borderRadius: 10,
-                    marginLeft: 5,
-                  }}
+                  style={styles.deleteSwipe}
                 >
                   <MaterialIcons name="delete" size={30} color="white" />
                 </TouchableOpacity>
               )}
             >
-             <Card.Content style={styles.profileContainer}>
+<Card.Content style={styles.profileContainer}>
   <Avatar.Image size={60} source={typeof item.avatar === 'string' ? { uri: item.avatar } : item.avatar} />
   <Text style={styles.username}>@{item.username}</Text>
   <Text style={styles.fullName}>{item.fullName}</Text>
   <Text style={styles.email}>{item.email}</Text>
 
-  {/* Display Joined Date */}
-  {item.createdAt && (
-    <Text style={styles.createdAt}>
-      Joined: {new Date(item.createdAt).toLocaleDateString('en-US')}
-    </Text>
+{/* ✅ Display Age (Now Dynamic) */}
+{item.age !== null ? (
+  <Text style={styles.infoText}>Age: {item.age}</Text>
+) : (
+  <Text style={styles.infoText}>Age: N/A</Text>
+)}
+
+
+  {/* ✅ Display Course */}
+  {item.course ? (
+    <Text style={styles.infoText}>Course: {item.course}</Text>
+  ) : (
+    <Text style={styles.infoText}>Course: N/A</Text>
   )}
+
+  {/* ✅ Display Birthdate (Formatted) */}
+  {item.dateOfBirth ? (
+    <Text style={styles.infoText}>
+      Birthdate: {new Date(item.dateOfBirth).toLocaleDateString('en-US')}
+    </Text>
+  ) : (
+    <Text style={styles.infoText}>Birthdate: N/A</Text>
+  )}
+
+  {/* ✅ Display Gender (Capitalized) */}
+  {item.gender ? (
+    <Text style={styles.infoText}>
+      Gender: {item.gender.charAt(0).toUpperCase() + item.gender.slice(1)}
+    </Text>
+  ) : (
+    <Text style={styles.infoText}>Gender: N/A</Text>
+  )}
+{/* ✅ Display Joined Date (Fix: Use joinedAt instead of createdAt) */}
+{item.joinedAt ? (
+  <Text style={styles.infoText}>
+    Joined: {new Date(item.joinedAt).toLocaleDateString('en-US')}
+  </Text>
+) : (
+  <Text style={styles.infoText}>Joined: N/A</Text>
+)}
+
 
   {/* Edit Info Button */}
   <TouchableOpacity onPress={() => navigation.navigate('EditUser', { user: item, onUserUpdated: fetchUsers })}>
@@ -250,6 +298,13 @@ const styles = StyleSheet.create({
     borderColor: 'red',
     borderWidth: 1,
   },
+  deleteSwipe: {
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 70,
+    height: '100%',
+  },
   floatingButtonsContainer: {
     position: 'absolute',
     bottom: 20,
@@ -274,7 +329,12 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
-  },  
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 5,
+  },
 });
 
 export default DashboardScreen;

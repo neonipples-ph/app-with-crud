@@ -4,18 +4,17 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
 import { Button, TextInput } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
 
 type LoginScreenProps = StackScreenProps<RootStackParamList, 'Login'>;
 
-const API_URL = 'https://apikonatalagato.vercel.app/api';
+const API_URL = 'https://apinijno.vercel.app/api';
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -35,7 +34,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       const data = await response.json();
 
       if (response.ok) {
+        // Store token and user data
+        await AsyncStorage.setItem('token', data.token);
         await AsyncStorage.setItem('user', JSON.stringify(data.user));
+
         navigation.replace('Dashboard');
       } else {
         Alert.alert('Error', data.message || 'Invalid credentials');
@@ -50,9 +52,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title , { color: 'green' } ] }>welcome back</Text>
+      <Text style={[styles.title, { color: 'green' }]}>Welcome Back</Text>
 
-      {/* Email Input with Icon */}
       <TextInput
         mode="outlined"
         label="Email"
@@ -63,7 +64,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         style={styles.input}
       />
 
-      {/* Password Input with Eye Icon */}
       <TextInput
         mode="outlined"
         label="Password"
@@ -99,12 +99,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         Register
       </Button>
 
-      {/* Terms & Conditions */}
       <TouchableOpacity onPress={() => setModalVisible(true)}>
         <Text style={styles.termsButton}>Terms & Conditions</Text>
       </TouchableOpacity>
 
-      {/* Modal for Terms & Conditions */}
       <Modal
         animationType="slide"
         transparent={true}

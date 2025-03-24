@@ -1,79 +1,173 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Avatar, Button, Card } from 'react-native-paper';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
 
+const API_URL = 'https://apinijno.vercel.app/api';
+
 type UserProfileProps = StackScreenProps<RootStackParamList, 'UserProfile'>;
 
 interface User {
+  _id: string;
   fullName: string;
   email: string;
   username: string;
-  avatar?: string | any;
+  dateOfBirth?: string;
+  age?: number;
+  gender?: string;
+  course?: string;
+  joinedAt?: string;
+  avatar?: string;
 }
 
 const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+  const [userData, setUserData] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCurrentUser();
+    getCurrentUserUsername();
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      navigation.setOptions({
-        headerTitle: '',
-        headerStyle: styles.header,
-        headerRight: () => null,
-      });
+    if (currentUsername) {
+      fetchUserData(currentUsername);
     }
-  }, [currentUser]);
+  }, [currentUsername]);
 
-  // Hide the back button when this screen is displayed
   useLayoutEffect(() => {
     navigation.setOptions({ headerLeft: () => null });
   }, [navigation]);
 
-  const getCurrentUser = async () => {
+  // Fetch the logged-in user's username from AsyncStorage
+  const getCurrentUserUsername = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
+      console.log("🔹 Stored User Data:", userData); // Debug log
+
       if (userData) {
-        setCurrentUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        setCurrentUsername(parsedUser.username);
       }
     } catch (error) {
-      console.error('Error getting user:', error);
+      console.error('❌ Error getting username:', error);
     }
   };
 
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    navigation.replace('Login'); // This ensures the user can't go back
+
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A'; // Handle null/undefined dates
+  
+    const cleanText = dateString.split('T')[0]; // Extract YYYY-MM-DD
+    const date = new Date(cleanText);
+  
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }); // Format as "March 24, 2025"
   };
+
+  // Fetch user data using the username
+  const fetchUserData = async (username: string) => {
+    try {
+      console.log(`Fetching user: ${API_URL}/users/${username}`);
+  
+      const response = await fetch(`${API_URL}/users/${username}`);
+  
+      // Log raw response before parsing
+      const textResponse = await response.text();
+      console.log("Raw API Response:", textResponse);
+  
+      // Try parsing the JSON
+      const data = JSON.parse(textResponse);
+  
+      if (response.ok) {
+        setUserData(data);
+      } else {
+        console.error('❌ API Error:', data.message);
+      }
+    } catch (error) {
+      console.error('❌ Fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('user');
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('❌ Error during logout:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="green" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* Status Bar */}
       <StatusBar barStyle="light-content" />
 
-      {/* Welcome Message */}
       <Text style={[styles.welcomeMessage, { color: 'green' }]}>
-  hello, {currentUser?.username || 'Guest'}!
-</Text>
+        Hello, {userData?.username || 'Guest'}!
+      </Text>
 
-      {/* User Profile Card */}
       <Card style={styles.card}>
         <Card.Content style={styles.profileContainer}>
-          {/* Avatar */}
-          <Avatar.Icon size={80} icon="account-circle" />
-          <Text style={styles.username}>@{currentUser?.username || 'Unknown'}</Text>
-          <Text style={styles.fullName}>{currentUser?.fullName || 'Guest'}</Text>
-          <Text style={styles.email}>{currentUser?.email || 'No email available'}</Text>
+          <Avatar.Text size={80} label={userData?.username?.substring(0, 2).toUpperCase() || "??"} />
+
+          <Text style={styles.username}>@{userData?.username || 'Unknown'}</Text>
+          <Text style={styles.fullName}>{userData?.fullName || 'Guest'}</Text>
+          <Text style={styles.email}>{userData?.email || 'No email available'}</Text>
+
+          {/* Display Birthdate Properly */}
+          {/* <View style={styles.infoContainer}>
+  <Text style={styles.infoText}>
+    Birthdate: {formatDate(userData?.dateOfBirth)} (Not Editable)
+  </Text>
+</View> */}
+
+
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoLabel}>Age:</Text>
+            {userData?.age ? (
+              <Text style={styles.infoText}>{userData.age} (Not Editable)</Text>
+            ) : (
+              <Text style={styles.infoText}>N/A</Text>
+            )}
+          </View>
+
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoLabel}>Gender:</Text>
+            <Text style={styles.infoText}>{userData?.gender || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoLabel}>Course:</Text>
+            <Text style={styles.infoText}>{userData?.course || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.infoContainer}>
+            {userData?.joinedAt ? (
+              <Text style={styles.infoText}>
+                Joined: {new Date(userData.joinedAt).toLocaleDateString('en-US')}
+              </Text>
+            ) : (
+              <Text style={styles.infoText}>Joined: N/A</Text>
+            )}
+          </View>
         </Card.Content>
       </Card>
 
-      {/* Logout Button */}
       <Button mode="contained" onPress={handleLogout} style={styles.logoutButton}>
         Logout
       </Button>
@@ -88,17 +182,17 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
-    justifyContent: 'center', // Center everything vertically
+    justifyContent: 'center',
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   welcomeMessage: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-  },
-  headerStyle:{
-    backgroundColor: '#4CAF50',
-  },
-  header: {
   },
   card: {
     width: '100%',
@@ -111,7 +205,6 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: 'center',
-    justifyContent: 'center', // Center content inside the card
   },
   fullName: {
     fontSize: 22,
@@ -132,7 +225,22 @@ const styles = StyleSheet.create({
     marginTop: 20,
     width: '90%',
     backgroundColor: 'red',
-    alignSelf: 'center', // Center button properly
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+  infoLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#555',
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#333',
   },
 });
 
