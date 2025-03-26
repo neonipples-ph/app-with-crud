@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { TextInput, Button, Card, Text } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker'; // Dropdown for gender
+import { Picker } from '@react-native-picker/picker';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
 
@@ -12,34 +12,33 @@ type User = {
   email: string;
   fullName?: string;
   username?: string;
-  dateOfBirth: string; // Required and read-only
+  dateOfBirth: string;
   age?: number;
   gender?: string;
   course?: string;
 };
 
-type EditUserScreenProps = StackScreenProps<RootStackParamList, 'EditUser'> & {
-  route: {
-    params: {
-      user: User;
-      onUserUpdated: () => void;
-    };
-  };
-};
+type EditUserScreenProps = StackScreenProps<RootStackParamList, 'EditUser'>;
 
 const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) => {
   const { user, onUserUpdated } = route.params;
   const [fullName, setFullName] = useState(user.fullName || '');
   const [username, setUsername] = useState(user.username || '');
   const [email, setEmail] = useState(user.email || '');
-  const [age, setAge] = useState(user.age ? String(user.age) : '');
   const [gender, setGender] = useState(user.gender || '');
   const [course, setCourse] = useState(user.course || '');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleUpdateUser = async () => {
-    if (!fullName || !username || !email || !age || !gender || !course) {
+    if (!fullName || !username || !email || !gender || !course) {
       Alert.alert('Error', 'All fields are required.');
+      return;
+    }
+
+    if (password && password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
       return;
     }
 
@@ -49,7 +48,14 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
       const response = await fetch(`${API_URL}/users/${user._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, username, email, age: Number(age), gender, course }),
+        body: JSON.stringify({
+          fullName,
+          username,
+          email,
+          gender,
+          course,
+          password: password ? password : undefined,
+        }),
       });
 
       const data = await response.json();
@@ -70,64 +76,90 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
   };
 
   return (
-    <View style={styles.overlay}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text style={styles.title}>EDIT USER INFO</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.overlay}>
+            <Card style={styles.card}>
+              <Card.Content>
+                <Text style={styles.title}>EDIT USER INFO</Text>
 
-          <TextInput label="Full Name" value={fullName} onChangeText={setFullName} mode="outlined" style={styles.input} />
-          <TextInput label="Username" value={username} onChangeText={setUsername} mode="outlined" style={styles.input} />
-          <TextInput label="Email" value={email} onChangeText={setEmail} mode="outlined" keyboardType="email-address" style={styles.input} />
+                <TextInput label="Full Name" value={fullName} onChangeText={setFullName} mode="outlined" style={styles.input} />
+                <TextInput label="Username" value={username} onChangeText={setUsername} mode="outlined" style={styles.input} />
+                <TextInput label="Email" value={email} onChangeText={setEmail} mode="outlined" keyboardType="email-address" style={styles.input} />
 
-          {/* Read-Only Birthdate */}
-          <View>
-          <Text style={styles.note}>* Age cannot be edited.</Text>
-  <TextInput 
-    label="Age" 
-    value={user.age?.toString() || ''} 
-    mode="outlined" 
-    editable={false} 
-    style={styles.input} 
-  />
+                {/* Read-Only Birthdate */}
+                <View>
+                  <Text style={styles.note}>* Age cannot be edited.</Text>
+                  <TextInput label="Age" value={user.age?.toString() || ''} mode="outlined" editable={false} style={styles.input} />
 
+                  <Text style={styles.note}>* Birthdate cannot be edited.</Text>
+                  <TextInput label="Birthdate" value={new Date(user.dateOfBirth).toISOString().split('T')[0]} mode="outlined" editable={false} style={styles.input} />
+                </View>
 
-  <Text style={styles.note}>* Birthdate cannot be edited.</Text>
-  <TextInput 
-    label="Birthdate" 
-    value={new Date(user.dateOfBirth).toISOString().split('T')[0]} 
-    mode="outlined" 
-    editable={false} 
-    style={styles.input} 
-  />
+                {/* Course Input */}
+                <TextInput label="Course" value={course} onChangeText={setCourse} mode="outlined" style={styles.input} />
 
-</View>
+                {/* Gender Picker */}
+                <View style={styles.pickerContainer}>
+                  <Text style={styles.label}>Gender</Text>
+                  <Picker
+                    selectedValue={gender}
+                    onValueChange={(itemValue) => setGender(itemValue)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select Gender" value="" />
+                    <Picker.Item label="Male" value="male" />
+                    <Picker.Item label="Female" value="female" />
+                    <Picker.Item label="Other" value="other" />
+                  </Picker>
+                </View>
 
+                {/* Password Input */}
+                <Text style={styles.note}>* Leave blank if you do not want to change your password.</Text>
+                <TextInput
+                  label="New Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  mode="outlined"
+                  secureTextEntry
+                  style={styles.input}
+                />
+                <TextInput
+                  label="Confirm New Password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  mode="outlined"
+                  secureTextEntry
+                  style={styles.input}
+                />
 
-          {/* Course Input */}
-          <TextInput label="Course" value={course} onChangeText={setCourse} mode="outlined" style={styles.input} />
-
-          {/* Gender Picker */}
-          <Picker selectedValue={gender} onValueChange={(itemValue) => setGender(itemValue)} style={styles.picker}>
-            <Picker.Item label="Select Gender" value="" />
-            <Picker.Item label="Male" value="male" />
-            <Picker.Item label="Female" value="female" />
-            <Picker.Item label="Other" value="other" />
-          </Picker>
-
-          <Button mode="contained" onPress={handleUpdateUser} loading={loading} disabled={loading} style={styles.button}>
-            {loading ? 'Updating...' : 'Update'}
-          </Button>
-        </Card.Content>
-      </Card>
-    </View>
+                <Button mode="contained" onPress={handleUpdateUser} loading={loading} disabled={loading} style={styles.button}>
+                  {loading ? 'Updating...' : 'Update'}
+                </Button>
+              </Card.Content>
+            </Card>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlay: {
+    width: '100%',
     alignItems: 'center',
   },
   card: {
@@ -147,9 +179,21 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     width: '100%',
   },
-  picker: {
-    backgroundColor: 'white',
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
     marginBottom: 15,
+    backgroundColor: 'white',
+  },
+  label: {
+    fontSize: 14,
+    color: 'gray',
+    marginBottom: 5,
+    marginLeft: 5,
+  },
+  picker: {
+    width: '100%',
   },
   button: {
     marginTop: 10,

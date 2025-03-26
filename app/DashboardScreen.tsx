@@ -42,6 +42,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { token } = route.params || {};
+
 
   useEffect(() => {
     fetchUsers();
@@ -92,18 +94,50 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       setLoading(false);
     }
   };
-  
 
+
+  const addUser = async (newUser) => {
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // ✅ Use token
+        },
+        body: JSON.stringify(newUser),
+      });
+  
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert("Success", "User added successfully!");
+        navigation.goBack();
+      } else {
+        Alert.alert("Error", data.message || "Failed to add user.");
+      }
+    } catch (error) {
+      console.error("Add user error:", error);
+      Alert.alert("Error", "Something went wrong.");
+    }
+  };
+  
+  
   const getCurrentUser = async () => {
     try {
+      const token = await AsyncStorage.getItem('token'); // Get token from storage
       const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        setCurrentUser(JSON.parse(userData));
+  
+      if (token && userData) {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUser({ ...parsedUser, token }); // ✅ Attach token to user
+      } else {
+        console.warn("No user data or token found.");
       }
     } catch (error) {
       console.error('Error getting user:', error);
     }
   };
+  
+  
 
   const handleDeleteUser = async (userId: string) => {
     Alert.alert(
@@ -229,10 +263,24 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           <Text style={styles.floatingButtonText}>My Profile</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.floatingButton} onPress={() => navigation.navigate('Register')}>
-          <MaterialIcons name="person-add" size={24} color="white" />
-          <Text style={styles.floatingButtonText}>Add User</Text>
-        </TouchableOpacity>
+
+<TouchableOpacity 
+  style={styles.floatingButton} 
+  onPress={() => {
+    if (currentUser?.token) {
+      navigation.navigate('AddUser', { token: currentUser.token });
+    } else {
+      console.error('Token is undefined');
+      Alert.alert('Error', 'User token is missing. Please log in again.');
+    }
+  }}
+>
+  <MaterialIcons name="person-add" size={24} color="white" />
+  <Text style={styles.floatingButtonText}>Add User</Text>
+</TouchableOpacity>
+
+
+
 
         <TouchableOpacity style={styles.floatingButton} onPress={() => AsyncStorage.removeItem('user').then(() => navigation.replace('Login'))}>
           <MaterialIcons name="logout" size={24} color="white" />
