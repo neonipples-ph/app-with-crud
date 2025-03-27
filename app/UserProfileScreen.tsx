@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Avatar, Button, Card } from 'react-native-paper';
+import { Avatar, Button, Card, IconButton } from 'react-native-paper';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
 
@@ -15,7 +15,6 @@ interface User {
   email: string;
   username: string;
   dateOfBirth?: string;
-  age?: number;
   gender?: string;
   course?: string;
   joinedAt?: string;
@@ -41,67 +40,59 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
     navigation.setOptions({ headerLeft: () => null });
   }, [navigation]);
 
-  // Fetch the logged-in user's username from AsyncStorage
   const getCurrentUserUsername = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
-      console.log("🔹 Stored User Data:", userData); // Debug log
-
       if (userData) {
         const parsedUser = JSON.parse(userData);
         setCurrentUsername(parsedUser.username);
       }
     } catch (error) {
-      console.error('❌ Error getting username:', error);
+      console.error('Error getting username:', error);
     }
   };
 
-
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A'; // Handle null/undefined dates
-  
-    const cleanText = dateString.split('T')[0]; // Extract YYYY-MM-DD
-    const date = new Date(cleanText);
-  
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }); // Format as "March 24, 2025"
-  };
-
-  // Fetch user data using the username
   const fetchUserData = async (username: string) => {
     try {
-      console.log(`Fetching user: ${API_URL}/users/${username}`);
-  
       const response = await fetch(`${API_URL}/users/${username}`);
-  
-      // Log raw response before parsing
-      const textResponse = await response.text();
-      console.log("Raw API Response:", textResponse);
-  
-      // Try parsing the JSON
-      const data = JSON.parse(textResponse);
-  
+      const data = await response.json();
+
       if (response.ok) {
         setUserData(data);
       } else {
-        console.error('❌ API Error:', data.message);
+        console.error('API Error:', data.message);
       }
     } catch (error) {
-      console.error('❌ Fetch error:', error);
+      console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
   };
-  
+
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  const calculateAge = (dateOfBirth: string | undefined) => {
+    if (!dateOfBirth) return 'N/A';
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('user');
       navigation.replace('Login');
     } catch (error) {
-      console.error('❌ Error during logout:', error);
+      console.error('Error during logout:', error);
     }
   };
 
@@ -122,33 +113,30 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
       </Text>
 
       <Card style={styles.card}>
-        <Card.Content style={styles.profileContainer}>
-          <Avatar.Text size={80} label={userData?.username?.substring(0, 2).toUpperCase() || "??"} />
-
-          <Text style={styles.username}>@{userData?.username || 'Unknown'}</Text>
-          <Text style={styles.fullName}>{userData?.fullName || 'Guest'}</Text>
-          <Text style={styles.email}>{userData?.email || 'No email available'}</Text>
-
-          {/* Display Birthdate Properly */}
-          {/* <View style={styles.infoContainer}>
-  <Text style={styles.infoText}>
-    Birthdate: {formatDate(userData?.dateOfBirth)} (Not Editable)
+        <Card.Content>
+          {/* Avatar, Username, Full Name, Age, Gender */}
+          <View style={styles.profileHeader}>
+          <Avatar.Image 
+  size={80} 
+  source={userData?.avatar ? { uri: userData.avatar } : require('../assets/images/default-avatar.png')} 
+/>
+<View style={styles.userInfo}>
+  <Text style={styles.fullName}>
+    {userData?.fullName || 'Guest'}
+    {userData?.dateOfBirth ? `, ${calculateAge(userData?.dateOfBirth)}` : ''}
   </Text>
-</View> */}
+  {userData?.gender && (
+    <Text style={styles.gender}> | {userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1)}</Text>
+  )}
+</View>
 
-
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoLabel}>Age:</Text>
-            {userData?.age ? (
-              <Text style={styles.infoText}>{userData.age} (Not Editable)</Text>
-            ) : (
-              <Text style={styles.infoText}>N/A</Text>
-            )}
           </View>
+          <Text style={styles.username}>@{userData?.username || 'Unknown'}</Text>
 
+          {/* User Details */}
           <View style={styles.infoContainer}>
-            <Text style={styles.infoLabel}>Gender:</Text>
-            <Text style={styles.infoText}>{userData?.gender || 'N/A'}</Text>
+            <Text style={styles.infoLabel}>Birthdate:</Text>
+            <Text style={styles.infoText}>{formatDate(userData?.dateOfBirth)}</Text>
           </View>
 
           <View style={styles.infoContainer}>
@@ -157,20 +145,24 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.infoContainer}>
-            {userData?.joinedAt ? (
-              <Text style={styles.infoText}>
-                Joined: {new Date(userData.joinedAt).toLocaleDateString('en-US')}
-              </Text>
-            ) : (
-              <Text style={styles.infoText}>Joined: N/A</Text>
-            )}
+            <Text style={styles.infoLabel}>Joined:</Text>
+            <Text style={styles.infoText}>
+              {userData?.joinedAt ? new Date(userData.joinedAt).toLocaleDateString('en-US') : 'N/A'}
+            </Text>
           </View>
         </Card.Content>
       </Card>
+      <View style={styles.logoutContainer}>
 
-      <Button mode="contained" onPress={handleLogout} style={styles.logoutButton}>
-        Logout
-      </Button>
+  <IconButton
+    icon="power"
+    size={30}
+    iconColor="red"
+    onPress={handleLogout}
+    style={styles.logoutButton}
+  />
+</View>
+
     </View>
   );
 };
@@ -197,41 +189,52 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 15,
     backgroundColor: '#fff',
-    alignItems: 'center',
-    elevation: 3,
+    elevation: 5,
     marginTop: 20,
   },
-  profileContainer: {
+  profileHeader: {
     alignItems: 'center',
+    marginBottom: 10,
+    
+    
   },
-  fullName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 10,
+  avatar: {
+    marginRight: 10,
+    position: 'absolute',
+    top: -20,
+    left: -20,
+    zIndex: 1,
+
   },
-  email: {
-    fontSize: 18,
+  userInfo: {
+    flexDirection: 'row', // Align age and gender inline
+    alignItems: 'center', // Align vertically
+    gap: 5, // Add spacing between text elements
+  },
+  gender: {
+    fontSize: 16,
+    fontWeight: '500',
     color: '#666',
-    marginTop: 5,
   },
+  
+  fullName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+
   username: {
     fontSize: 16,
     color: '#999',
-    marginTop: 5,
-  },
-  logoutButton: {
-    marginTop: 20,
-    width: '90%',
-    backgroundColor: 'red',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   infoContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginTop: 10,
-    paddingHorizontal: 10,
+    marginVertical: 5,
   },
   infoLabel: {
     fontSize: 16,
@@ -242,6 +245,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  logoutContainer: {
+    position: 'absolute',
+    bottom: 30,  // Adjust based on screen size
+    alignSelf: 'center', // Centers it horizontally
+    backgroundColor: '#fff',
+    borderRadius: 50,
+    elevation: 5, // Shadow effect
+  },
+  logoutButton: {
+    backgroundColor: '#fff',
+    borderRadius: 50, // Circular button
+    elevation: 5,
+  },
+  
+
 });
 
 export default UserProfileScreen;

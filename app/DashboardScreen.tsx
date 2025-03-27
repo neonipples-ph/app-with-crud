@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, ActivityIndicator, Text, Alert, StatusBar, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native'; // ✅ Ensure dashboard updates on focus
 import { StackScreenProps } from '@react-navigation/stack';
-// import { RootStackParamList } from './App';
 import { Avatar, Card } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 
 type DashboardScreenProps = StackScreenProps<RootStackParamList, 'Dashboard'>;
+
 export type RootStackParamList = {
-  // Other routes
-  Dashboard: { token: string }; // Add token to Dashboard route
-  Login: undefined; // Add Login route
-  UserProfile: undefined; // Add UserProfile route
-  AddUser: { token: string; onUserAdded: () => Promise<void> }; // Add AddUser route
-  EditUser: { user: User; onUserUpdated: () => Promise<void> }; // Add EditUser route
+  Dashboard: { token: string };
+  Login: undefined;
+  UserProfile: undefined;
+  AddUser: { token: string; onUserAdded: () => Promise<void> };
+  EditUser: { user: User; onUserUpdated: () => Promise<void> };
 };
 
 interface User {
@@ -22,15 +22,14 @@ interface User {
   fullName: string;
   email: string;
   username: string;
-  dateOfBirth?: string; // Changed from birthdate to dateOfBirth (to match API)
-  age?: number | null; // ✅ Added age
+  dateOfBirth?: string;
+  age?: number | null;
   gender?: string;
   course?: string;
-  joinedAt?: string; // ✅ Added joinedAt (from API)
+  joinedAt?: string;
   avatar?: string | any;
-  token?: string; // ✅ Added token property
+  token?: string;
 }
-
 
 const API_URL = 'https://apinijno.vercel.app/api';
 
@@ -53,148 +52,112 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation, route }) 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { token } = route.params || {};
 
-
   useEffect(() => {
-    fetchUsers();
     getCurrentUser();
   }, []);
+
+  // ✅ Re-fetch users when dashboard screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchUsers();
+    }, [])
+  );
 
   const fetchUsers = async () => {
     try {
       const response = await fetch(`${API_URL}/users`);
       let data: User[] = await response.json();
-  
+
       let usedIndexes: number[] = [];
       data = data.map(user => {
-        // 🔹 Assign a random avatar
         let randomIndex;
         do {
           randomIndex = Math.floor(Math.random() * avatars.length);
         } while (usedIndexes.includes(randomIndex) && usedIndexes.length < avatars.length);
-  
+
         usedIndexes.push(randomIndex);
         if (usedIndexes.length >= avatars.length) usedIndexes = [];
-  
-        // ✅ Calculate age from dateOfBirth
+
+        // ✅ Calculate age correctly
         let age = null;
         if (user.dateOfBirth) {
           const birthDate = new Date(user.dateOfBirth);
           const today = new Date();
           age = today.getFullYear() - birthDate.getFullYear();
-  
-          // Adjust if the birthday hasn't occurred yet this year
           const birthdayThisYear = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
           if (today < birthdayThisYear) {
             age -= 1;
           }
         }
-  
+
         return {
           ...user,
           avatar: user.avatar || avatars[randomIndex],
-          age, // ✅ Attach calculated age
+          age,
         };
       });
-  
+
       setUsers(data);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
   };
 
-
-  interface NewUser {
-    fullName: string;
-    email: string;
-    username: string;
-    dateOfBirth?: string;
-    gender?: string;
-    course?: string;
-  }
-
-  interface AddUserResponse {
-    message?: string;
-  }
-
-  const addUser = async (newUser: NewUser): Promise<void> => {
-    try {
-      const response = await fetch(`${API_URL}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // ✅ Use token
-        },
-        body: JSON.stringify(newUser),
-      });
-  
-      const data: AddUserResponse = await response.json();
-      if (response.ok) {
-        Alert.alert("Success", "User added successfully!");
-        navigation.goBack();
-      } else {
-        Alert.alert("Error", data.message || "Failed to add user.");
-      }
-    } catch (error) {
-      console.error("Add user error:", error);
-      Alert.alert("Error", "Something went wrong.");
-    }
-  };
-  
-  
   const getCurrentUser = async () => {
     try {
-      const token = await AsyncStorage.getItem('token'); // Get token from storage
+      const token = await AsyncStorage.getItem('token');
       const userData = await AsyncStorage.getItem('user');
-  
+
       if (token && userData) {
         const parsedUser = JSON.parse(userData);
-        setCurrentUser({ ...parsedUser, token }); // ✅ Attach token to user
+        setCurrentUser({ ...parsedUser, token });
       } else {
-        console.warn("No user data or token found.");
+        console.warn('No user data or token found.');
       }
     } catch (error) {
       console.error('Error getting user:', error);
     }
   };
-  
-  
 
-  const handleDeleteUser = async (userId: string) => {
-    Alert.alert(
-      'Delete User',
-      'Are you sure you want to delete this user?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const response = await fetch(`${API_URL}/users/${userId}`, {
-                method: 'DELETE',
-              });
-
-              if (!response.ok) {
-                throw new Error('Failed to delete user');
-              }
-
-              setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
-            } catch (error) {
-              console.error('Error deleting user:', error);
+const handleDeleteUser = async (userId: string) => {
+    Alert.alert('Delete User', 'Are you sure you want to delete this user?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            if (!currentUser?.token) {
+              Alert.alert('Error', 'Authentication token is missing.');
+              return;
             }
-          },
+
+            const response = await fetch(`${API_URL}/users/${userId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${currentUser.token}`,
+              },
+            });
+
+            if (!response.ok) throw new Error('Failed to delete user');
+
+            setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete user.');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
+
+  
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
 
-      {/* Invisible Header with Welcome Text */}
       <View style={{ height: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' }}>
         <Text style={{ fontSize: 25, fontWeight: 'bold', color: 'green' }}>
           Welcome, @{currentUser ? currentUser.username : 'Guest'}!
@@ -208,136 +171,116 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation, route }) 
           data={users}
           keyExtractor={item => item._id}
           contentContainerStyle={{ paddingBottom: 100 }}
-          renderItem={({ item }) => (
-            <Swipeable
-              renderRightActions={() => (
-                <TouchableOpacity
-                  onPress={() => handleDeleteUser(item._id)}
-                  style={styles.deleteSwipe}
-                >
-                  <MaterialIcons name="delete" size={30} color="white" />
-                </TouchableOpacity>
-              )}
-            >
-<Card.Content style={styles.profileContainer}>
-  <Avatar.Image size={60} source={typeof item.avatar === 'string' ? { uri: item.avatar } : item.avatar} />
-  <Text style={styles.username}>@{item.username}</Text>
-  <Text style={styles.fullName}>{item.fullName}</Text>
-  <Text style={styles.email}>{item.email}</Text>
+          renderItem={({ item }) => {
+           
+            let closeTimeout; 
 
-{/* ✅ Display Age (Now Dynamic) */}
-{item.age !== null ? (
-  <Text style={styles.infoText}>Age: {item.age}</Text>
-) : (
-  <Text style={styles.infoText}>Age: N/A</Text>
-)}
+          return (
+            <Swipeable renderRightActions={() => (
+              <TouchableOpacity onPress={() => handleDeleteUser(item._id)} style={styles.deleteSwipe}>
+                <MaterialIcons name="delete" size={30} color="white" />
+              </TouchableOpacity>
+            )}>
+<Card.Content style={styles.profileCont}>
+  {/* Absolute Positioned Header */}
+  <View style={styles.profileHeader}>
+    {/* Avatar + Username */}
+    <Avatar.Image size={60} source={typeof item.avatar === 'string' ? { uri: item.avatar } : item.avatar} style={styles.avatar} />
+    <Text style={styles.user_avatar}>@{item.username}</Text>
 
-
-  {/* ✅ Display Course */}
-  {item.course ? (
-    <Text style={styles.infoText}>Course: {item.course}</Text>
-  ) : (
-    <Text style={styles.infoText}>Course: N/A</Text>
-  )}
-
-  {/* ✅ Display Birthdate (Formatted) */}
-  {item.dateOfBirth ? (
-    <Text style={styles.infoText}>
-      Birthdate: {new Date(item.dateOfBirth).toLocaleDateString('en-US')}
+    {/* Full Name, Age, Gender */}
+    <Text style={styles.fullname}>
+      {item.fullName}
+      {item.age ? `, ${item.age}` : ''}
+      {item.gender ? ` (${item.gender.charAt(0).toUpperCase() + item.gender.slice(1)})` : ''}
     </Text>
-  ) : (
-    <Text style={styles.infoText}>Birthdate: N/A</Text>
-  )}
+  </View>
 
-  {/* ✅ Display Gender (Capitalized) */}
-  {item.gender ? (
+  {/* Center-aligned Information */}
+  <View style={styles.centeredInfo}>
+    <Text style={styles.email}>{item.email}</Text>
+    <Text style={styles.infoText}>Course: {item.course ?? 'N/A'}</Text>
     <Text style={styles.infoText}>
-      Gender: {item.gender.charAt(0).toUpperCase() + item.gender.slice(1)}
+      Birthdate: {item.dateOfBirth ? new Date(item.dateOfBirth).toLocaleDateString('en-US') : 'N/A'}
     </Text>
-  ) : (
-    <Text style={styles.infoText}>Gender: N/A</Text>
-  )}
-{/* ✅ Display Joined Date (Fix: Use joinedAt instead of createdAt) */}
-{item.joinedAt ? (
-  <Text style={styles.infoText}>
-    Joined: {new Date(item.joinedAt).toLocaleDateString('en-US')}
-  </Text>
-) : (
-  <Text style={styles.infoText}>Joined: N/A</Text>
-)}
+    <Text style={styles.infoText}>Joined: {item.joinedAt ? new Date(item.joinedAt).toLocaleDateString('en-US') : 'N/A'}</Text>
+  </View>
 
+  {/* Edit Button */}
+  <TouchableOpacity onPress={() => {
+    console.log('Editing user:', item);
+    const formattedDate = item.dateOfBirth ? new Date(item.dateOfBirth).toISOString().split('T')[0] : '';
 
-  {/* Edit Info Button */}
-  <TouchableOpacity onPress={() => navigation.navigate('EditUser', { 
-    user: { 
-      ...item, 
-      dateOfBirth: item.dateOfBirth ? String(item.dateOfBirth) : "" 
-    }, 
-    onUserUpdated: fetchUsers 
-  })}>
-    <Text style={{ color: 'red', fontSize: 16, marginTop: 5 }}>Edit Info</Text>
-</TouchableOpacity>
-
+    navigation.navigate('EditUser', { 
+      user: { ...item, dateOfBirth: formattedDate }, 
+      onUserUpdated: fetchUsers 
+    });
+  }}>
+    <Text style={{ color: 'red', fontSize: 16, marginTop: 5, textAlign: 'center' }}>Edit Info</Text>
+  </TouchableOpacity>
 </Card.Content>
+
 
             </Swipeable>
           )}
+        }
         />
       )}
-
       {/* Floating Buttons */}
       <View style={styles.floatingButtonsContainer}>
-        <TouchableOpacity style={styles.floatingButton} onPress={() => navigation.navigate('UserProfile')}>
-          <MaterialIcons name="account-circle" size={24} color="white" />
-          <Text style={styles.floatingButtonText}>My Profile</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.floatingButton} onPress={() => navigation.navigate('UserProfile')}>
+        <MaterialIcons name="account-circle" size={24} color="white" />
+        <Text style={styles.floatingButtonText}>My Profile</Text>
+      </TouchableOpacity>
 
 
 <TouchableOpacity 
-  style={styles.floatingButton} 
-  onPress={() => {
-    if (currentUser?.token) {
-      navigation.navigate('AddUser', { 
-        token: currentUser.token, 
-        onUserAdded: fetchUsers 
-      });
-    } else {
-      console.error('Token is undefined');
-      Alert.alert('Error', 'User token is missing. Please log in again.');
-    }
-  }}
+style={styles.floatingButton} 
+onPress={() => {
+  if (currentUser?.token) {
+    navigation.navigate('AddUser', { 
+      token: currentUser.token, 
+      onUserAdded: fetchUsers 
+    });
+  } else {
+    console.error('Token is undefined');
+    Alert.alert('Error', 'User token is missing. Please log in again.');
+  }
+}}
 >
-  <MaterialIcons name="person-add" size={24} color="white" />
-  <Text style={styles.floatingButtonText}>Add User</Text>
+<MaterialIcons name="person-add" size={24} color="white" />
+<Text style={styles.floatingButtonText}>Add User</Text>
 </TouchableOpacity>
 
 
 
 
-        <TouchableOpacity style={styles.floatingButton} onPress={() => AsyncStorage.removeItem('user').then(() => navigation.replace('Login'))}>
-          <MaterialIcons name="logout" size={24} color="white" />
-          <Text style={styles.floatingButtonText}>Logout</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.floatingButton} onPress={() => AsyncStorage.removeItem('user').then(() => navigation.replace('Login'))}>
+        <MaterialIcons name="logout" size={24} color="white" />
+        <Text style={styles.floatingButtonText}>Logout</Text>
+      </TouchableOpacity>
       </View>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-    card: {
-    marginBottom: 10,
+  card: {
+    marginBottom: 15, // Space between each card
+    marginHorizontal: 10, // Adds spacing on the sides
     backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 10,
     elevation: 3,
     width: '96%',
     alignSelf: 'center',
-
   },
+  
   profileContainer: {
     alignItems: 'center',
     marginBottom: 10,
@@ -383,7 +326,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: 70,
-    height: '100%',
+    height: '95%',
+    borderTopLeftRadius: 10, // Adjust the curve as needed
+    borderBottomLeftRadius: 10, // Adjust the curve as needed
   },
   floatingButtonsContainer: {
     position: 'absolute',
@@ -415,6 +360,65 @@ const styles = StyleSheet.create({
     color: '#555',
     marginTop: 5,
   },
+  profileCont: {
+    position: 'relative',
+    paddingTop: 80, // Ensures space for the absolute header
+    elevation: 5, // Android shadow effect
+    borderTopLeftRadius: 20, // More pronounced curve
+    borderBottomLeftRadius: 20,
+    borderTopRightRadius: 10, // Slightly less curved for contrast
+    borderBottomRightRadius: 10,
+    backgroundColor: '#fff', // Ensure the background is visible
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4, // iOS shadow effect
+    marginBottom: 15, // Space between each card
+    marginHorizontal: 10, // Adds spacing on the sides
+
+  },
+  
+  
+  profileHeader: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  
+  user_avatar: {
+    position: 'absolute',
+    top: 65,
+    left: 10,
+    fontSize: 14,
+    color: 'gray',
+  },
+  
+  fullname: {
+    position: 'absolute',
+    top: 15,
+    left: 80,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  
+  centeredInfo: {
+    alignItems: 'center',
+    marginTop: 50, // Adjust so content doesn't overlap the absolute header
+  },
+  
 });
 
 export default DashboardScreen;
+
+function useRef(arg0: {}) {
+  throw new Error('Function not implemented.');
+}

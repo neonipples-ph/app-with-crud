@@ -31,6 +31,8 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const formattedDate = user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '';
+
   const handleUpdateUser = async () => {
     if (!fullName || !username || !email || !gender || !course) {
       Alert.alert('Error', 'All fields are required.');
@@ -54,6 +56,7 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
           email,
           gender,
           course,
+          dateOfBirth: formattedDate,
           password: password ? password : undefined,
         }),
       });
@@ -91,19 +94,16 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
                 <TextInput label="Username" value={username} onChangeText={setUsername} mode="outlined" style={styles.input} />
                 <TextInput label="Email" value={email} onChangeText={setEmail} mode="outlined" keyboardType="email-address" style={styles.input} />
 
-                {/* Read-Only Birthdate */}
                 <View>
                   <Text style={styles.note}>* Age cannot be edited.</Text>
                   <TextInput label="Age" value={user.age?.toString() || ''} mode="outlined" editable={false} style={styles.input} />
 
                   <Text style={styles.note}>* Birthdate cannot be edited.</Text>
-                  <TextInput label="Birthdate" value={new Date(user.dateOfBirth).toISOString().split('T')[0]} mode="outlined" editable={false} style={styles.input} />
+                  <TextInput label="Birthdate" value={formattedDate} mode="outlined" editable={false} style={styles.input} />
                 </View>
 
-                {/* Course Input */}
                 <TextInput label="Course" value={course} onChangeText={setCourse} mode="outlined" style={styles.input} />
 
-                {/* Gender Picker */}
                 <View style={styles.pickerContainer}>
                   <Text style={styles.label}>Gender</Text>
                   <Picker
@@ -118,7 +118,6 @@ const EditUserScreen: React.FC<EditUserScreenProps> = ({ route, navigation }) =>
                   </Picker>
                 </View>
 
-                {/* Password Input */}
                 <Text style={styles.note}>* Leave blank if you do not want to change your password.</Text>
                 <TextInput
                   label="New Password"

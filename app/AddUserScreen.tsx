@@ -25,21 +25,46 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [course, setCourse] = useState('');
   const [birthdate, setBirthdate] = useState('');
+  const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [loading, setLoading] = useState(false);
 
   const formatBirthdate = (text: string) => {
-    let cleanText = text.replace(/\D/g, '');
+    let cleanText = text.replace(/\D/g, ''); // Remove non-numeric characters
+  
+    // Auto-format as YYYY-MM-DD
     if (cleanText.length > 4) cleanText = `${cleanText.slice(0, 4)}-${cleanText.slice(4)}`;
     if (cleanText.length > 7) cleanText = `${cleanText.slice(0, 7)}-${cleanText.slice(7)}`;
     if (cleanText.length > 10) cleanText = cleanText.slice(0, 10);
+  
     setBirthdate(cleanText);
+  
+    // Check if the birthdate is complete and valid
+    if (cleanText.length === 10) {
+      const computedAge = calculateAge(cleanText);
+      setAge(computedAge.toString());
+    }
+  };
+  
+
+  const calculateAge = (dob: string): number => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
   };
 
   const addUser = async () => {
-    if (!fullName || !username || !email || !course || !gender || !birthdate) {
+    if (!fullName || !username || !email || !password || !course || !gender || !birthdate) {
       Alert.alert('Error', 'All fields are required.');
       return;
     }
@@ -50,6 +75,8 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
       return;
     }
 
+    const age = calculateAge(birthdate);
+    const createdAt = new Date().toLocaleDateString(); // Current timestamp in ISO format
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/users`, {
@@ -58,8 +85,19 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ fullName, username, email, course, birthdate, gender }),
+        body: JSON.stringify({
+          fullName,
+          username,
+          email,
+          password,
+          course,
+          dateOfBirth: birthdate, // Send formatted birthdate
+          age, // Include calculated age
+          gender,
+          createdAt, // Send createdAt timestamp
+        }),
       });
+
       const data = await response.json();
       if (response.ok) {
         Alert.alert('Success', 'User added successfully!');
@@ -83,6 +121,7 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
           <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
           <TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
           <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+          <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
           <TextInput style={styles.input} placeholder="Course" value={course} onChangeText={setCourse} />
           <Text style={styles.label}>Gender</Text>
           <View style={styles.genderContainer}>
@@ -94,6 +133,7 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
             ))}
           </View>
           <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={birthdate} onChangeText={formatBirthdate} keyboardType="numeric" maxLength={10} />
+          <TextInput style={styles.input} placeholder="Age" value={age} editable={false} />
           <Button mode="contained" onPress={addUser} style={styles.button} labelStyle={styles.buttonText} loading={loading} disabled={loading}>
             Add User
           </Button>
