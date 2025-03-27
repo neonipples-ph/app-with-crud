@@ -2,12 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { View, FlatList, ActivityIndicator, Text, Alert, StatusBar, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from './App';
+// import { RootStackParamList } from './App';
 import { Avatar, Card } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 
 type DashboardScreenProps = StackScreenProps<RootStackParamList, 'Dashboard'>;
+export type RootStackParamList = {
+  // Other routes
+  Dashboard: { token: string }; // Add token to Dashboard route
+  Login: undefined; // Add Login route
+  UserProfile: undefined; // Add UserProfile route
+  AddUser: { token: string; onUserAdded: () => Promise<void> }; // Add AddUser route
+  EditUser: { user: User; onUserUpdated: () => Promise<void> }; // Add EditUser route
+};
 
 interface User {
   _id: string;
@@ -20,6 +28,7 @@ interface User {
   course?: string;
   joinedAt?: string; // ✅ Added joinedAt (from API)
   avatar?: string | any;
+  token?: string; // ✅ Added token property
 }
 
 
@@ -38,7 +47,7 @@ const avatars = [
   require('../assets/images/avatar10.png'),
 ];
 
-const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
+const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation, route }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -96,7 +105,20 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   };
 
 
-  const addUser = async (newUser) => {
+  interface NewUser {
+    fullName: string;
+    email: string;
+    username: string;
+    dateOfBirth?: string;
+    gender?: string;
+    course?: string;
+  }
+
+  interface AddUserResponse {
+    message?: string;
+  }
+
+  const addUser = async (newUser: NewUser): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
@@ -107,7 +129,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         body: JSON.stringify(newUser),
       });
   
-      const data = await response.json();
+      const data: AddUserResponse = await response.json();
       if (response.ok) {
         Alert.alert("Success", "User added successfully!");
         navigation.goBack();
@@ -246,9 +268,16 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
 
 
   {/* Edit Info Button */}
-  <TouchableOpacity onPress={() => navigation.navigate('EditUser', { user: item, onUserUpdated: fetchUsers })}>
+  <TouchableOpacity onPress={() => navigation.navigate('EditUser', { 
+    user: { 
+      ...item, 
+      dateOfBirth: item.dateOfBirth ? String(item.dateOfBirth) : "" 
+    }, 
+    onUserUpdated: fetchUsers 
+  })}>
     <Text style={{ color: 'red', fontSize: 16, marginTop: 5 }}>Edit Info</Text>
-  </TouchableOpacity>
+</TouchableOpacity>
+
 </Card.Content>
 
             </Swipeable>
@@ -268,7 +297,10 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   style={styles.floatingButton} 
   onPress={() => {
     if (currentUser?.token) {
-      navigation.navigate('AddUser', { token: currentUser.token });
+      navigation.navigate('AddUser', { 
+        token: currentUser.token, 
+        onUserAdded: fetchUsers 
+      });
     } else {
       console.error('Token is undefined');
       Alert.alert('Error', 'User token is missing. Please log in again.');
