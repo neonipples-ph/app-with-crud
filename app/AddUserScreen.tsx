@@ -117,7 +117,7 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          <Text style={styles.title}>Add New User</Text>
+          <Text style={styles.title}>add new user</Text>
           <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
           <TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
           <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
