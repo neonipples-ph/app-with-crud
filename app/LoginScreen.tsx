@@ -38,7 +38,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         await AsyncStorage.setItem('token', data.token);
         await AsyncStorage.setItem('user', JSON.stringify(data.user));
 
-        navigation.replace('Dashboard');
+        navigation.replace('Dashboard', { navigation, route: {}, token: data.token });
       } else {
         Alert.alert('Error', data.message || 'Invalid credentials');
       }

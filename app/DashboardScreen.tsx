@@ -6,6 +6,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { Avatar, Card } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
+// import { RootStackParamList } from './App';
 
 type DashboardScreenProps = StackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -15,6 +16,7 @@ export type RootStackParamList = {
   UserProfile: undefined;
   AddUser: { token: string; onUserAdded: () => Promise<void> };
   EditUser: { user: User; onUserUpdated: () => Promise<void> };
+  RandomGroup: undefined; // Added RandomGroup route
 };
 
 interface User {
@@ -252,6 +254,12 @@ onPress={() => {
 <Text style={styles.floatingButtonText}>Add User</Text>
 </TouchableOpacity>
 
+<TouchableOpacity 
+          style={styles.floatingButton} 
+          onPress={() => navigation.navigate('RandomGroup')}>
+          <MaterialIcons name="group" size={24} color="white" />
+          <Text style={styles.floatingButtonText}>Random Group</Text>
+        </TouchableOpacity>
 
 
 
