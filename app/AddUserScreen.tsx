@@ -32,6 +32,47 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
   const [gender, setGender] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleAddUser = async () => {
+    if (!fullName || !username || !email || !password || !course || !birthdate || !gender) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+  
+    setLoading(true);
+  
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fullName,
+          username,
+          email,
+          password,
+          course,
+          dateOfBirth: birthdate,
+          gender
+        })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add user.");
+      }
+  
+      Alert.alert("Success", "User added successfully.");
+      navigation.goBack(); // Navigate back to the dashboard
+    } catch (error) {
+      console.error("Error adding user:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
   const formatBirthdate = (text: string) => {
     let cleanText = text.replace(/\D/g, '');
     if (cleanText.length > 4) cleanText = `${cleanText.slice(0, 4)}-${cleanText.slice(4)}`;
@@ -83,9 +124,17 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
               ))}
             </View>
             <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-            <Button mode="contained" onPress={() => {}} style={styles.button} labelStyle={styles.buttonText} loading={loading} disabled={loading}>
-              <MaterialCommunityIcons name="account-plus" size={24} color="white" />
-            </Button>
+            <Button
+  mode="contained"
+  onPress={handleAddUser}
+  style={styles.button}
+  labelStyle={styles.buttonText}
+  loading={loading}
+  disabled={loading}
+>
+  <MaterialCommunityIcons name="account-plus" size={24} color="white" />
+</Button>
+
           </Card.Content>
         </Card>
       </ScrollView>

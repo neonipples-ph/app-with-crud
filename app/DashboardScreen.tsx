@@ -66,19 +66,37 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation, route }) 
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/users`);
+      const token = await AsyncStorage.getItem("token"); // Retrieve token from storage
+  
+      if (!token) {
+        console.error("No token found. Please log in.");
+        return;
+      }
+  
+      const response = await fetch(`${API_URL}/users`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Error fetching users: ${response.statusText}`);
+      }
+  
       let data: User[] = await response.json();
-
+  
       let usedIndexes: number[] = [];
       data = data.map(user => {
         let randomIndex;
         do {
           randomIndex = Math.floor(Math.random() * avatars.length);
         } while (usedIndexes.includes(randomIndex) && usedIndexes.length < avatars.length);
-
+  
         usedIndexes.push(randomIndex);
         if (usedIndexes.length >= avatars.length) usedIndexes = [];
-
+  
         // ✅ Calculate age correctly
         let age = null;
         if (user.dateOfBirth) {
@@ -90,21 +108,22 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation, route }) 
             age -= 1;
           }
         }
-
+  
         return {
           ...user,
           avatar: user.avatar || avatars[randomIndex],
           age,
         };
       });
-
+  
       setUsers(data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
   };
+  
 
   const getCurrentUser = async () => {
     try {
@@ -273,7 +292,7 @@ onPress={() => {
 
 const styles = StyleSheet.create({
 
-container: { flex: 1, backgroundColor: '#f8f9fa',
+container: { flex: 1, backgroundColor: '#f8f9fa', marginBottom: 10
 },
     deleteSwipe: {
       backgroundColor: 'red',

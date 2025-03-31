@@ -6,6 +6,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   _id: string;
@@ -49,43 +50,64 @@ const RandomGroup: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/users`);
+      const token = await AsyncStorage.getItem("token"); // Retrieve token from storage
+  
+      if (!token) {
+        console.error("No token found. Please log in.");
+        return;
+      }
+  
+      const response = await fetch(`${API_URL}/users`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Error fetching users: ${response.statusText}`);
+      }
+  
       let data: User[] = await response.json();
-
+  
       let usedIndexes: number[] = [];
       data = data.map(user => {
         let randomIndex;
         do {
           randomIndex = Math.floor(Math.random() * avatars.length);
         } while (usedIndexes.includes(randomIndex) && usedIndexes.length < avatars.length);
-        
+  
         usedIndexes.push(randomIndex);
         if (usedIndexes.length >= avatars.length) usedIndexes = [];
-        
+  
+        // ✅ Calculate age correctly
         let age = null;
         if (user.dateOfBirth) {
           const birthDate = new Date(user.dateOfBirth);
           const today = new Date();
           age = today.getFullYear() - birthDate.getFullYear();
-          if (today < new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate())) {
+          const birthdayThisYear = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+          if (today < birthdayThisYear) {
             age -= 1;
           }
         }
-
+  
         return {
           ...user,
           avatar: user.avatar || avatars[randomIndex],
           age,
         };
       });
-
+  
       setUsers(data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
   };
+  
 
   const createGroups = () => {
     const shuffledUsers = [...users].sort(() => Math.random() - 0.5);
