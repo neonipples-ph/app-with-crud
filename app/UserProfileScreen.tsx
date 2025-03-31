@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Avatar, Button, Card, IconButton } from 'react-native-paper';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from './App';
+import { Ionicons } from '@expo/vector-icons';
 
 const API_URL = 'https://apinijno.vercel.app/api';
 
@@ -56,7 +56,6 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
     try {
       const response = await fetch(`${API_URL}/users/${username}`);
       const data = await response.json();
-
       if (response.ok) {
         setUserData(data);
       } else {
@@ -107,72 +106,38 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-
-      <Text style={[styles.welcomeMessage, { color: 'green' }]}>
-        Hello, {userData?.username || 'Guest'}!
-      </Text>
-
-      <Card style={styles.card}>
-        <Card.Content>
-          {/* Avatar, Username, Full Name, Age, Gender */}
-          <View style={styles.profileHeader}>
-          <Avatar.Image 
-  size={80} 
-  source={userData?.avatar ? { uri: userData.avatar } : require('../assets/images/default-avatar.png')} 
-/>
-<View style={styles.userInfo}>
-  <Text style={styles.fullName}>
-    {userData?.fullName || 'Guest'}
-    {userData?.dateOfBirth ? `, ${calculateAge(userData?.dateOfBirth)}` : ''}
-  </Text>
-  {userData?.gender && (
-    <Text style={styles.gender}> | {userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1)}</Text>
-  )}
-</View>
-
-          </View>
-          <Text style={styles.username}>@{userData?.username || 'Unknown'}</Text>
-
-          {/* User Details */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoLabel}>Birthdate:</Text>
-            <Text style={styles.infoText}>{formatDate(userData?.dateOfBirth)}</Text>
-          </View>
-
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoLabel}>Course:</Text>
-            <Text style={styles.infoText}>{userData?.course || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoLabel}>Joined:</Text>
-            <Text style={styles.infoText}>
-              {userData?.joinedAt ? new Date(userData.joinedAt).toLocaleDateString('en-US') : 'N/A'}
-            </Text>
-          </View>
-        </Card.Content>
-      </Card>
-      <View style={styles.logoutContainer}>
-
-  <IconButton
-    icon="power"
-    size={30}
-    iconColor="red"
-    onPress={handleLogout}
-    style={styles.logoutButton}
-  />
-</View>
-
+      <View style={styles.profileHeader}>
+        <Image 
+          style={styles.avatar} 
+          source={userData?.avatar ? { uri: userData.avatar } : require('../assets/images/default-avatar.png')} 
+        />
+        <Text style={styles.fullName}>{userData?.fullName || 'Guest'}</Text>
+        <Text style={styles.username}>@{userData?.username || 'Unknown'}</Text>
+      </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoLabel}>Birthdate:</Text>
+        <Text style={styles.infoText}>{formatDate(userData?.dateOfBirth)}</Text>
+      </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoLabel}>Course:</Text>
+        <Text style={styles.infoText}>{userData?.course || 'N/A'}</Text>
+      </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoLabel}>Joined:</Text>
+        <Text style={styles.infoText}>{userData?.joinedAt ? new Date(userData.joinedAt).toLocaleDateString('en-US') : 'N/A'}</Text>
+      </View>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Ionicons name="power" size={24} color="white" />
+      </TouchableOpacity>
     </View>
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#e8f5e9',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -181,85 +146,48 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  welcomeMessage: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  card: {
-    width: '100%',
-    padding: 20,
-    borderRadius: 15,
-    backgroundColor: '#fff',
-    elevation: 5,
-    marginTop: 20,
-  },
   profileHeader: {
     alignItems: 'center',
-    marginBottom: 10,
-    
-    
+    marginBottom: 20,
   },
   avatar: {
-    marginRight: 10,
-    position: 'absolute',
-    top: -20,
-    left: -20,
-    zIndex: 1,
-
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
   },
-  userInfo: {
-    flexDirection: 'row', // Align age and gender inline
-    alignItems: 'center', // Align vertically
-    gap: 5, // Add spacing between text elements
-  },
-  gender: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
-  },
-  
   fullName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
+    color: 'green',
   },
-
   username: {
     fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-    marginBottom: 15,
+    color: '#555',
   },
   infoContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    width: '80%',
     marginVertical: 5,
   },
   infoLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#555',
+    color: '#444',
   },
   infoText: {
     fontSize: 16,
-    color: '#333',
-  },
-  logoutContainer: {
-    position: 'absolute',
-    bottom: 30,  // Adjust based on screen size
-    alignSelf: 'center', // Centers it horizontally
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    elevation: 5, // Shadow effect
+    color: '#222',
   },
   logoutButton: {
-    backgroundColor: '#fff',
-    borderRadius: 50, // Circular button
-    elevation: 5,
+    marginTop: 30,
+    backgroundColor: 'red',
+    padding: 15,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  
-
 });
 
 export default UserProfileScreen;

@@ -11,7 +11,7 @@ import {
   Platform
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
-import { Button } from 'react-native-paper';
+import { Button, Card } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type RootStackParamList = {
@@ -33,111 +33,61 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
   const [loading, setLoading] = useState(false);
 
   const formatBirthdate = (text: string) => {
-    let cleanText = text.replace(/\D/g, ''); // Remove non-numeric characters
-  
-    // Auto-format as YYYY-MM-DD
+    let cleanText = text.replace(/\D/g, '');
     if (cleanText.length > 4) cleanText = `${cleanText.slice(0, 4)}-${cleanText.slice(4)}`;
     if (cleanText.length > 7) cleanText = `${cleanText.slice(0, 7)}-${cleanText.slice(7)}`;
     if (cleanText.length > 10) cleanText = cleanText.slice(0, 10);
-  
     setBirthdate(cleanText);
-  
-    // Check if the birthdate is complete and valid
     if (cleanText.length === 10) {
       const computedAge = calculateAge(cleanText);
       setAge(computedAge.toString());
     }
   };
-  
 
   const calculateAge = (dob: string): number => {
     const birthDate = new Date(dob);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-
     return age;
-  };
-
-  const addUser = async () => {
-    if (!fullName || !username || !email || !password || !course || !gender || !birthdate) {
-      Alert.alert('Error', 'All fields are required.');
-      return;
-    }
-
-    const birthdatePattern = /^\d{4}-\d{2}-\d{2}$/;
-    if (!birthdatePattern.test(birthdate)) {
-      Alert.alert('Error', 'Birthdate must be in YYYY-MM-DD format.');
-      return;
-    }
-
-    const age = calculateAge(birthdate);
-    const createdAt = new Date().toLocaleDateString(); // Current timestamp in ISO format
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fullName,
-          username,
-          email,
-          password,
-          course,
-          dateOfBirth: birthdate, // Send formatted birthdate
-          age, // Include calculated age
-          gender,
-          createdAt, // Send createdAt timestamp
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'User added successfully!');
-        navigation.goBack();
-      } else {
-        Alert.alert('Error', data.message || 'Failed to add user.');
-      }
-    } catch (error) {
-      console.error('Add user error:', error);
-      Alert.alert('Error', 'Something went wrong.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          <Text style={styles.title}>add new user</Text>
-          <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
-          <TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
-          <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
-          <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-          <TextInput style={styles.input} placeholder="Course" value={course} onChangeText={setCourse} />
-          <Text style={styles.label}>Gender</Text>
-          <View style={styles.genderContainer}>
-            {['Male', 'Female', 'Non-binary'].map((g) => (
-              <TouchableOpacity key={g} style={styles.genderOption} onPress={() => setGender(g)}>
-                <MaterialCommunityIcons name={gender === g ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color="black" />
-                <Text style={styles.genderText}>{g}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={birthdate} onChangeText={formatBirthdate} keyboardType="numeric" maxLength={10} />
-          <TextInput style={styles.input} placeholder="Age" value={age} editable={false} />
-          <Button mode="contained" onPress={addUser} style={styles.button} labelStyle={styles.buttonText} loading={loading} disabled={loading}>
-            Add User
-          </Button>
-        </View>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={styles.title}>Add New User</Text>
+            <View style={styles.row}>
+              <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
+              <TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
+            </View>
+            <View style={styles.row}>
+              <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+              <TextInput style={styles.input} placeholder="Age" value={age} editable={false} />
+            </View>
+            <View style={styles.row}>
+              <TextInput style={styles.input} placeholder="Course" value={course} onChangeText={setCourse} />
+              <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={birthdate} onChangeText={formatBirthdate} keyboardType="numeric" maxLength={10} />
+            </View>
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.genderContainer}>
+              {['Male', 'Female', 'Other'].map((g) => (
+                <TouchableOpacity key={g} style={styles.genderOption} onPress={() => setGender(g)}>
+                  <MaterialCommunityIcons name={gender === g ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color="black" />
+                  <Text style={styles.genderText}>{g}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+            <Button mode="contained" onPress={() => {}} style={styles.button} labelStyle={styles.buttonText} loading={loading} disabled={loading}>
+              <MaterialCommunityIcons name="account-plus" size={24} color="white" />
+            </Button>
+          </Card.Content>
+        </Card>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -145,14 +95,15 @@ const AddUserScreen: React.FC<StackScreenProps<RootStackParamList, 'AddUser'>> =
 
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  container: { alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  label: { alignSelf: 'flex-start', fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
-  input: { width: '100%', height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, marginBottom: 15, backgroundColor: '#fff' },
-  genderContainer: { flexDirection: 'column', alignSelf: 'flex-start', marginBottom: 15 },
-  genderOption: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  card: { padding: 20, borderRadius: 10 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  input: { flex: 1, height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, marginHorizontal: 5, backgroundColor: '#fff' },
+  label: { alignSelf: 'flex-start', fontSize: 16, fontWeight: 'bold', marginBottom: 5, marginHorizontal: 8  },
+  genderContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  genderOption: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 4 },
   genderText: { marginLeft: 10, fontSize: 16 },
-  button: { width: '100%', backgroundColor: 'green', borderRadius: 10, paddingVertical: 8 },
+  button: { marginTop: 10, backgroundColor: 'green', borderRadius: 10 },
   buttonText: { fontSize: 16, color: '#fff' },
 });
 

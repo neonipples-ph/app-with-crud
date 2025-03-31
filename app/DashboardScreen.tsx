@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, ActivityIndicator, Text, Alert, StatusBar, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native'; // ✅ Ensure dashboard updates on focus
+import { useFocusEffect } from '@react-navigation/native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { Avatar, Card } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
-// import { RootStackParamList } from './App';
 
 type DashboardScreenProps = StackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -153,9 +152,6 @@ const handleDeleteUser = async (userId: string) => {
       },
     ]);
   };
-
-  
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
@@ -169,20 +165,39 @@ const handleDeleteUser = async (userId: string) => {
       {loading ? (
         <ActivityIndicator size="large" color="green" />
       ) : (
+
+
+
+
+
         <FlatList
           data={users}
-          keyExtractor={item => item._id}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          renderItem={({ item }) => {
-           
-            let closeTimeout; 
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => (
 
-          return (
-            <Swipeable renderRightActions={() => (
-              <TouchableOpacity onPress={() => handleDeleteUser(item._id)} style={styles.deleteSwipe}>
-                <MaterialIcons name="delete" size={30} color="white" />
-              </TouchableOpacity>
-            )}>
+
+
+
+
+            <Swipeable
+              renderLeftActions={() => (
+                <TouchableOpacity onPress={() => {
+                  console.log('Editing user:', item);
+                  const formattedDate = item.dateOfBirth ? new Date(item.dateOfBirth).toISOString().split('T')[0] : '';
+                  navigation.navigate('EditUser', { 
+                    user: { ...item, dateOfBirth: formattedDate }, 
+                    onUserUpdated: fetchUsers 
+                  });
+                }} style={styles.editSwipe}>
+                  <MaterialIcons name="edit" size={30} color="white" />
+                </TouchableOpacity>
+              )}
+              renderRightActions={() => (
+                <TouchableOpacity onPress={() => handleDeleteUser(item._id)} style={styles.deleteSwipe}>
+                  <MaterialIcons name="delete" size={30} color="white" />
+                </TouchableOpacity>
+              )}
+            >
 <Card.Content style={styles.profileCont}>
   {/* Absolute Positioned Header */}
   <View style={styles.profileHeader}>
@@ -207,29 +222,13 @@ const handleDeleteUser = async (userId: string) => {
     </Text>
     <Text style={styles.infoText}>Joined: {item.joinedAt ? new Date(item.joinedAt).toLocaleDateString('en-US') : 'N/A'}</Text>
   </View>
-
-  {/* Edit Button */}
-  <TouchableOpacity onPress={() => {
-    console.log('Editing user:', item);
-    const formattedDate = item.dateOfBirth ? new Date(item.dateOfBirth).toISOString().split('T')[0] : '';
-
-    navigation.navigate('EditUser', { 
-      user: { ...item, dateOfBirth: formattedDate }, 
-      onUserUpdated: fetchUsers 
-    });
-  }}>
-    <Text style={{ color: 'red', fontSize: 16, marginTop: 5, textAlign: 'center' }}>Edit Info</Text>
-  </TouchableOpacity>
 </Card.Content>
-
-
             </Swipeable>
           )}
-        }
         />
       )}
-      {/* Floating Buttons */}
-      <View style={styles.floatingButtonsContainer}>
+       {/* Floating Buttons */}
+       <View style={styles.floatingButtonsContainer}>
       <TouchableOpacity style={styles.floatingButton} onPress={() => navigation.navigate('UserProfile')}>
         <MaterialIcons name="account-circle" size={24} color="white" />
         <Text style={styles.floatingButtonText}>My Profile</Text>
@@ -272,12 +271,41 @@ onPress={() => {
   );
 };
 
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
+
+container: { flex: 1, backgroundColor: '#f8f9fa',
+},
+    deleteSwipe: {
+      backgroundColor: 'red',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 70,
+      height: '95%',
+      borderTopLeftRadius: 10,
+      borderBottomLeftRadius: 10,
+    },
+    editSwipe: {
+      backgroundColor: 'blue',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 70,
+      height: '95%',
+      borderTopRightRadius: 10,
+      borderBottomRightRadius: 10,
+    },
+  // profileCont: { padding: 15, backgroundColor: '#fff', borderRadius: 10, margin: 10 
+
+  // },
+  // avatar: { marginBottom: 10 
+
+  // },
+  // fullname: { fontSize: 16, fontWeight: 'bold' 
+
+  // },
+  email: { fontSize: 14, color: '#555' 
+
   },
+
   card: {
     marginBottom: 15, // Space between each card
     marginHorizontal: 10, // Adds spacing on the sides
@@ -311,10 +339,10 @@ const styles = StyleSheet.create({
     color: '#777',
     marginBottom: 5,
   },
-  email: {
-    fontSize: 16,
-    color: '#555',
-  },
+  // email: {
+  //   fontSize: 16,
+  //   color: '#555',
+  // },
   createdAt: {
     fontSize: 14,
     color: '#888',
@@ -329,15 +357,15 @@ const styles = StyleSheet.create({
     borderColor: 'red',
     borderWidth: 1,
   },
-  deleteSwipe: {
-    backgroundColor: 'red',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 70,
-    height: '95%',
-    borderTopLeftRadius: 10, // Adjust the curve as needed
-    borderBottomLeftRadius: 10, // Adjust the curve as needed
-  },
+  // deleteSwipe: {
+  //   backgroundColor: 'red',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   width: 70,
+  //   height: '95%',
+  //   borderTopLeftRadius: 10, // Adjust the curve as needed
+  //   borderBottomLeftRadius: 10, // Adjust the curve as needed
+  // },
   floatingButtonsContainer: {
     position: 'absolute',
     bottom: 20,

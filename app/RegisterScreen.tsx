@@ -118,15 +118,15 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           <TextInput style={styles.input} placeholder="Course" value={course} onChangeText={setCourse} />
 
           {/* Gender Selection */}
-          <Text style={styles.label}>Gender</Text>
-          <View style={styles.genderContainer}>
-            {['Male', 'Female', 'Non-binary'].map((g) => (
-              <TouchableOpacity key={g} style={styles.genderOption} onPress={() => selectGender(g)}>
-                <MaterialCommunityIcons name={gender === g ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color="black" />
-                <Text style={styles.genderText}>{g}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.genderContainer}>
+              {['Male', 'Female', 'Other'].map((g) => (
+                <TouchableOpacity key={g} style={styles.genderOption} onPress={() => setGender(g)}>
+                  <MaterialCommunityIcons name={gender === g ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color="black" />
+                  <Text style={styles.genderText}>{g}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
           {/* Birthdate Input */}
           <TextInput
@@ -169,6 +169,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
+    marginHorizontal: 15 
+
   },
   input: {
     width: '100%',
@@ -181,7 +183,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   genderContainer: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignSelf: 'flex-start',
     marginBottom: 15,
   },
@@ -189,10 +191,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 5,
+    marginHorizontal: 15 
   },
   genderText: {
     marginLeft: 10,
     fontSize: 16,
+    
   },
   button: {
     width: '100%',
